@@ -31,6 +31,7 @@ import Jadwal from "@/pages/admin/instance/Jadwal";
 import NewUploadApl from "@/pages/app/assessment/NewUploadApl";
 import AssessorList from "@/pages/admin/assessor/AssesssorList";
 import StrukturList from "@/pages/admin/struktur/StrukturList";
+import MetodeList from "@/pages/admin/metode_sertifikasi/MetodeList";
 
 const { Home, Gallery, Tuks, Berita, Partnership, Tentang, Skema, Kontak } =
   lazily(() => import("@/pages/user"));
@@ -209,6 +210,12 @@ const router = createBrowserRouter([
     {
       path: "instance/:instanceId/jadwal",
       element: <Jadwal />,
+    },
+
+    // metode
+    {
+      path: "metode_sertifikasi",
+      element: <MetodeList />,
     },
 
     // schema

@@ -19,6 +19,7 @@ return new class extends Migration {
             $table->integer('user_id')->nullable();
             $table->text('file')->nullable();
             $table->string('file_path')->nullable();
+            $table->enum('type', ['unit', 'additional'])->default('unit');
 
             $table->softDeletes();
             $table->timestamps();

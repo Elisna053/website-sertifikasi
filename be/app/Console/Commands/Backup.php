@@ -53,6 +53,9 @@ class Backup extends Command
         }
 
         $tables = [
+            'instances' => [
+                'instances',
+            ],
             'assessees' => [
                 'assessees',
             ],
@@ -86,6 +89,9 @@ class Backup extends Command
             'strukturs' => [
                 'strukturs',
             ],
+            'metode_sertifikasis' => [
+                'metode_sertifikasis',
+            ],
 
 
         ];
@@ -101,8 +107,7 @@ class Backup extends Command
                 echo shell_exec('php artisan iseed ' . $arg_type . ' --force');
             }
         }
-        exec('php artisan migrate:refresh --seed');
-        echo "migrasi selesai ";
+        echo "Backup selesai . . . . . . ";
 
 
         return 1;

@@ -17,6 +17,7 @@ const AssessmentRegisterForm = () => {
   const [jadwal, setJadwal] = useState([]);
   const [selectedInstanceId, setSelectedInstanceId] = useState('');
   const [schemas, setSchemas] = useState([]);
+  const [metodes, setMetodes] = useState([]);
   const [assessmentDates, setAssessmentDates] = useState([]);
   const [userDataLoaded, setUserDataLoaded] = useState(false);
   
@@ -35,7 +36,7 @@ const AssessmentRegisterForm = () => {
     
     // Step 2: Skema & Metode
     schemaId: "",
-    certificationMethod: "", // "observasi" atau "portofolio"
+    metodeSertifikasiId: "",
     assessmentDate: "",
     
     // Step 3: Upload Dokumen
@@ -167,6 +168,38 @@ const AssessmentRegisterForm = () => {
     };
     
     fetchSchemas();
+  }, []);
+
+  // Ambil data metodes dari API
+  useEffect(() => {
+    const fetchMetodes = async () => {
+      try {
+        setLoading(true);
+        const API_URL = import.meta.env.VITE_API_URL || window.ENV_API_URL || "http://localhost:8000/api";
+        const token = localStorage.getItem('token');
+        
+        const response = await fetch(`${API_URL}/metode_sertifikasi_references`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch metode');
+        }
+        
+        const data = await response.json();
+        setMetodes(data.data || []);
+      } catch (err) {
+        console.error('Error fetching metode:', err);
+        setError('Gagal memuat data metode. Silakan coba lagi nanti.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchMetodes();
   }, []);
   
   // Generate dummy assessment dates (sebagai contoh)
@@ -518,9 +551,8 @@ const AssessmentRegisterForm = () => {
           errors.schemaId = "Skema sertifikasi wajib dipilih";
           isValid = false;
         }
-        
-        if (!formData.certificationMethod) {
-          errors.certificationMethod = "Metode sertifikasi wajib dipilih";
+        if (!formData.metodeSertifikasiId) {
+          errors.metodeSertifikasiId = "Metode sertifikasi wajib dipilih";
           isValid = false;
         }
         
@@ -553,6 +585,7 @@ const AssessmentRegisterForm = () => {
         };
         
         // Periksa semua dokumen wajib
+        checkFile('apl01', "Berkas APL 1 wajib diunggah");
         checkFile('lastDiploma', "Ijazah terakhir wajib diunggah");
         checkFile('idCard', "KTP wajib diunggah");
         checkFile('familyCard', "Kartu Keluarga wajib diunggah");
@@ -613,69 +646,54 @@ const AssessmentRegisterForm = () => {
   const handleDownloadTemplate = async (templateType, apl02Type) => {
     try {
       setLoading(true);
-      
+      setError(null);
       const API_URL = import.meta.env.VITE_API_URL || window.ENV_API_URL || "http://localhost:8000/api";
       const token = localStorage.getItem('token');
       
       if (!token) {
-        setError('Anda harus login terlebih dahulu');
-        navigate('/auth/login');
+        console.error('Token tidak ditemukan');
         return;
       }
-      
-      // URL endpoint tergantung jenis template
+    
       let endpoint = '';
-      switch(templateType) {
+      const metodeId = formData.metodeSertifikasiId;
+    
+      if (!metodeId) {
+        throw new Error('ID Metode Sertifikasi tidak tersedia.');
+      }
+    
+      switch (templateType) {
         case 'apl01':
-          endpoint = `/assessee/template/download/apl01`;
-          break;
-        case 'apl02':
-          // Jika apl02Type diberikan, gunakan itu
-          const type = apl02Type || (formData.certificationMethod === 'observasi' ? 'observation' : 
-                                    formData.certificationMethod === 'portofolio' ? 'portofolio' : '');
-          
-          if (!type) {
-            throw new Error('Metode asesmen tidak valid. Pilih metode observasi atau portofolio.');
-          }
-          
-          endpoint = `/assessee/template/download/apl02?type=${type}`;
-          break;
-        case 'apl02_observasi':
-          endpoint = `/assessee/template/download/apl02?type=observation`;
-          break;
-        case 'apl02_portofolio':
-          endpoint = `/assessee/template/download/apl02?type=portofolio`;
+          endpoint = `/metode_sertifikasi/${metodeId}`;
           break;
         default:
-          throw new Error('Template tidak tersedia');
+          throw new Error('Tipe template tidak dikenali.');
       }
-      
+    
       console.log(`Downloading template from: ${API_URL}${endpoint}`);
-      
-      // Proses download template dari API
+    
       const response = await fetch(`${API_URL}${endpoint}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Accept': 'application/octet-stream'
+          'Accept': 'application/octet-stream',
         }
       });
-      
+    
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
-      
-      // Mendapatkan nama file dari header
+    
       const contentDisposition = response.headers.get('Content-Disposition');
       let filename = 'template.pdf';
-      
+    
       if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-        if (filenameMatch && filenameMatch[1]) {
-          filename = filenameMatch[1].replace(/['"]/g, '');
+        const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (match && match[1]) {
+          filename = match[1].replace(/['"]/g, '');
         }
       }
-      
-      // Download file
+    
+      // Proses download file
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -685,13 +703,16 @@ const AssessmentRegisterForm = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+    
     } catch (err) {
       console.error('Error downloading template:', err);
       setError(err.message || 'Gagal mengunduh template. Silakan coba lagi nanti.');
     } finally {
       setLoading(false);
     }
+
+
+    
   };
   
   // Handle next step
@@ -772,7 +793,7 @@ const AssessmentRegisterForm = () => {
       
       // 2. Data skema
       formDataToSend.append('schema_id', formData.schemaId);
-      formDataToSend.append('method', formData.certificationMethod);
+      formDataToSend.append('metode_sertifikasi_id', formData.metodeSertifikasiId);
       formDataToSend.append('assessment_date', formData.assessmentDate);
       
       // 3. Dokumen-dokumen
@@ -846,15 +867,15 @@ const AssessmentRegisterForm = () => {
 
       }
        // Bersihkan data di localStorage
- localStorage.removeItem('assessmentFiles');
+      localStorage.removeItem('assessmentFiles');
+            
+      console.log('Navigating...');
+      navigate('/user/assessment');
       
- console.log('Navigating...');
- navigate('/user/assessment');
- 
- toast.success("Pendaftaran asesmen berhasil dikirim");
- 
- // Redirect ke halaman utama assessee
- navigate('/app/assessee');
+      toast.success("Pendaftaran asesmen berhasil dikirim");
+      
+      // Redirect ke halaman utama assessee
+      navigate('/app/assessee');
      
     } catch (error) {
       console.error('Error submitting assessment:', error);
@@ -1069,7 +1090,7 @@ const AssessmentRegisterForm = () => {
             <h2 className="text-xl font-semibold">Skema & Metode Sertifikasi</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
+              <div className="space-y-2 mb-5">
                 <label htmlFor="schemaId" className="block text-sm font-medium text-gray-700">
                   Pilih Skema Sertifikasi <span className="text-red-500">*</span>
                 </label>
@@ -1091,26 +1112,29 @@ const AssessmentRegisterForm = () => {
                   <p className="text-sm text-red-500">{formErrors.schemaId}</p>
                 )}
               </div>
-              
               <div className="space-y-2">
-                <label htmlFor="certificationMethod" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="schemaId" className="block text-sm font-medium text-gray-700">
                   Pilih Metode Sertifikasi <span className="text-red-500">*</span>
                 </label>
                 <select
-                  id="certificationMethod"
-                  name="certificationMethod"
-                  value={formData.certificationMethod}
+                  id="metodeSertifikasiId"
+                  name="metodeSertifikasiId"
+                  value={formData.metodeSertifikasiId}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md ${formErrors.certificationMethod ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`w-full px-3 py-2 border rounded-md ${formErrors.metodeSertifikasiId ? 'border-red-500' : 'border-gray-300'}`}
                 >
                   <option value="">Pilih Metode Sertifikasi</option>
-                  <option value="observasi">Observasi</option>
-                  <option value="portofolio">Portofolio</option>
+                  {metodes.map(metodeSertifikasi => (
+                    <option key={metodeSertifikasi.id} value={metodeSertifikasi.id}>
+                      {metodeSertifikasi.nama_metode}
+                    </option>
+                  ))}
                 </select>
-                {formErrors.certificationMethod && (
-                  <p className="text-sm text-red-500">{formErrors.certificationMethod}</p>
+                {formErrors.metodeSertifikasiId && (
+                  <p className="text-sm text-red-500">{formErrors.metodeSertifikasiId}</p>
                 )}
               </div>
+              
               
               <div className="space-y-2">
                 <label htmlFor="assessmentDate" className="block text-sm font-medium text-gray-700">

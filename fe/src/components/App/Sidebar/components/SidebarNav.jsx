@@ -4,6 +4,7 @@ import {
   FiHome,
   FiImage,
   FiShield,
+  FiTerminal,
   FiUsers
 } from 'react-icons/fi';
 import { useLocation } from 'react-router-dom';
@@ -105,6 +106,15 @@ const SidebarNav = () => {
           label="Instance" 
           roleAccess={['admin']}
           isActive={isPathActive("/admin/instance", pathname)}
+        />
+
+        {/* Metode Sertifikasi Link */}
+        <SidebarNavItem 
+          to="/admin/metode_sertifikasi" 
+          icon={<FiTerminal />} 
+          label="Metode" 
+          roleAccess={['admin']}
+          isActive={isPathActive("/admin/metode_sertifikasi", pathname)}
         />
 
         {/* Schema Link */}

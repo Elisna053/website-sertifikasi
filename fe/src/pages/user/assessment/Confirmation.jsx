@@ -1,7 +1,91 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaCheck, FaInfoCircle } from 'react-icons/fa';
 
 const Confirmation = ({ formData, formErrors, handleChange }) => {
+
+  const [paramData, setParamData] = useState({
+    instanceId: '',         // ID dari instansi
+    schemaId: '',           // ID dari skema sertifikasi
+    metodeSertifikasiId: '',// ID dari metode sertifikasi
+    instanceName: '',       // Nama instansi (untuk ditampilkan)
+    schemaName: '',         // Nama skema sertifikasi
+    metodeSertifikasiName: '' // Nama metode sertifikasi
+  });
+  
+
+  const API_URL = import.meta.env.VITE_API_URL || window.ENV_API_URL || "http://localhost:8000/api";
+
+  useEffect(() => {
+    const fetchInstansi = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/instances_by_id/${formData.instanceId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+  
+        if (!response.ok) throw new Error(`Error: ${response.status}`);
+        const result = await response.json();
+  
+        if (result.success && result.data) {
+          setParamData(prev => ({ ...prev, instanceName: result.data.name }));
+        }
+      } catch (error) {
+        console.error('Gagal mengambil data instansi:', error);
+      }
+    };
+  
+    const fetchMetodes = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/metode/${formData.metodeSertifikasiId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+  
+        if (!response.ok) throw new Error(`Error: ${response.status}`);
+        const result = await response.json();
+  
+        if (result.success && result.data) {
+          setParamData(prev => ({ ...prev, metodeSertifikasiName: result.data.nama_metode }));
+        }
+      } catch (error) {
+        console.error('Gagal mengambil data metode sertifikasi:', error);
+      }
+    };
+  
+    const fetchSchemas = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/schemas/${formData.schemaId}/details/`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+  
+        if (!response.ok) throw new Error(`Error: ${response.status}`);
+        const result = await response.json();
+  
+        if (result.success && result.data) {
+          setParamData(prev => ({ ...prev, schemaName: result.data.name }));
+        }
+      } catch (error) {
+        console.error('Gagal mengambil data skema:', error);
+      }
+    };
+  
+    if (formData.instanceId) fetchInstansi();
+    if (formData.metodeSertifikasiId) fetchMetodes();
+    if (formData.schemaId) fetchSchemas();
+  
+  }, [formData.instanceId, formData.metodeSertifikasiId, formData.schemaId, API_URL]);
+  
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Konfirmasi dan Permohonan Sertifikat</h2>
@@ -55,7 +139,7 @@ const Confirmation = ({ formData, formErrors, handleChange }) => {
             
             <div className="space-y-2">
               <p className="text-sm font-medium text-gray-500">Instansi</p>
-              <p className="font-medium">{formData.instanceName || '-'}</p>
+              <p className="font-medium">{paramData.instanceName || '-'}</p>
             </div>
           </div>
           
@@ -65,14 +149,13 @@ const Confirmation = ({ formData, formErrors, handleChange }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <p className="text-sm font-medium text-gray-500">Skema Sertifikasi</p>
-                <p className="font-medium">{formData.schemaName || '-'}</p>
+                <p className="font-medium">{paramData.schemaName || '-'}</p>
               </div>
               
               <div className="space-y-2">
                 <p className="text-sm font-medium text-gray-500">Metode Sertifikasi</p>
                 <p className="font-medium">
-                  {formData.certificationMethod === 'observasi' ? 'Observasi' : 
-                   formData.certificationMethod === 'portofolio' ? 'Portofolio' : '-'}
+                <p className="font-medium">{paramData.metodeSertifikasiName || '-'}</p>
                 </p>
               </div>
               
