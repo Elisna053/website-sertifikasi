@@ -19,5 +19,6 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::get('/instances-reference', [InstanceController::class, 'getInstancesReference']);
+Route::get('/instances_by_id/{id}', [InstanceController::class, 'getById']);
 Route::get('/instances-jadwal-reference/{instnceId}', [InstanceController::class, 'getJadwalRefrences']);
 Route::get('/get_unit_by_id_ass/{asId}', [InstanceController::class, 'getUnitByIdAss']);

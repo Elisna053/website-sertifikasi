@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { FaCloudUploadAlt, FaFileAlt, FaTrash, FaExclamationCircle } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaFileAlt, FaTrash, FaExclamationCircle, FaFileDownload } from 'react-icons/fa';
 
 const DocumentUpload = ({ formData, formErrors, handleChange, handleFileChange, handleDownloadTemplate }) => {
   const [localFormData, setLocalFormData] = useState({
+    apl01: null,
     lastDiploma: null,
     idCard: null,
     familyCard: null,
@@ -16,6 +17,7 @@ const DocumentUpload = ({ formData, formErrors, handleChange, handleFileChange, 
       console.log("formData received in DocumentUpload:", formData);
       
       setLocalFormData({
+        apl01: formData.apl01 || null,
         lastDiploma: formData.lastDiploma || null,
         idCard: formData.idCard || null,
         familyCard: formData.familyCard || null,
@@ -236,12 +238,33 @@ const DocumentUpload = ({ formData, formErrors, handleChange, handleFileChange, 
           Unggah dokumen-dokumen yang diperlukan untuk pendaftaran sertifikasi. Pastikan file dalam format PDF, JPG, JPEG, atau PNG dengan ukuran maksimal 5MB.
         </p>
       </div>
+
+      <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              APL 01 - Formulir Permohonan
+            </label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault(); // Mencegah form submit
+                  e.stopPropagation(); // Mencegah event bubbling
+                  handleDownloadTemplate('apl01');
+                }}
+                className="flex items-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+              >
+                <FaFileDownload className="mr-2" />
+                Unduh Template
+              </button>
+            </div>
+          </div>
       
       <div className="space-y-6">
         <div>
           <h3 className="text-lg font-medium">Dokumen Wajib</h3>
           <p className="text-sm text-gray-500 mt-1">Semua dokumen berikut harus diunggah</p>
           
+          {renderDocument('apl01', 'Berkas APL 1')}
           {renderDocument('lastDiploma', 'Ijazah Terakhir')}
           {renderDocument('idCard', 'KTP')}
           {renderDocument('familyCard', 'Kartu Keluarga')}

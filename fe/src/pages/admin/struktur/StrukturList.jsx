@@ -64,10 +64,10 @@ const fetchGalleries = async () => {
     if (!response.ok) throw new Error(`Error: ${response.status}`);
 
     const result = await response.json();
-    result.success && result.data ? setGalleries(result.data) : setError(result.message || "Gagal mendapatkan data galeri");
+    result.success && result.data ? setGalleries(result.data) : setError(result.message || "Gagal mendapatkan data ");
   } catch (err) {
-    console.error("Error fetching gallery data:", err);
-    setError("Terjadi kesalahan saat mengambil data galeri");
+    console.error("Error fetching  data:", err);
+    setError("Terjadi kesalahan saat mengambil data ");
   } finally {
     setLoading(false);
   }
@@ -157,15 +157,15 @@ const handleConfirmDelete = async () => {
 
     if (!response.ok) {
       const result = await response.json();
-      throw new Error(result.message || "Gagal menghapus galeri");
+      throw new Error(result.message || "Gagal menghapus data");
     }
 
-    toast.success("Gambar berhasil dihapus");
+    toast.success("data berhasil dihapus");
     setShowDeleteModal(false);
     fetchGalleries();
   } catch (err) {
-    console.error("Error deleting gallery:", err);
-    toast.error(err.message || "Terjadi kesalahan saat menghapus galeri");
+    console.error("Error deleting data:", err);
+    toast.error(err.message || "Terjadi kesalahan saat menghapus data");
   } finally {
     setLoading(false);
   }
@@ -236,9 +236,9 @@ const handleSubmitEdit = async (e) => {
     });
 
     const result = await response.json();
-    if (!response.ok || !result.success) throw new Error(result.message || "Gagal memperbarui galeri");
+    if (!response.ok || !result.success) throw new Error(result.message || "Gagal memperbarui data");
 
-    toast.success("Galeri berhasil diperbarui");
+    toast.success("data berhasil diperbarui");
     setShowEditModal(false);
     setImageFile(null);
     setImagePreview(null);
@@ -247,7 +247,7 @@ const handleSubmitEdit = async (e) => {
     fetchGalleries();
   } catch (err) {
     console.error("Error updating gallery:", err);
-    toast.error(err.message || "Terjadi kesalahan saat memperbarui galeri");
+    toast.error(err.message || "Terjadi kesalahan saat memperbarui data");
   } finally {
     setUploadLoading(false);
   }
@@ -270,13 +270,13 @@ const handleResetEditImage = () => {
   return (
     <div className="container mx-auto p-4">
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold">Galeri</h1>
+        <h1 className="text-2xl font-bold">Struktural</h1>
 
         <div className="flex w-full md:w-auto gap-4">
           <div className="relative flex-grow md:flex-grow-0 md:min-w-[300px]">
             <Input
               type="text"
-              placeholder="Cari gambar..."
+              placeholder="Cari data..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -288,7 +288,7 @@ const handleResetEditImage = () => {
             onClick={handleAdd} 
             className="flex items-center gap-2 whitespace-nowrap"
           >
-            <FiPlus /> Tambah Gambar
+            <FiPlus /> Tambah
           </Button>
         </div>
       </div>
@@ -365,20 +365,20 @@ const handleResetEditImage = () => {
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Tambah Gambar Galeri</DialogTitle>
+            <DialogTitle>Tambah Data</DialogTitle>
             <DialogDescription>
-              Unggah gambar baru untuk galeri website.
+              Unggah data baru.
             </DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleSubmitAdd} className="space-y-4">
             
           <div className="space-y-2">
-              <Label htmlFor="edit-struktur_name">Nama Assessor</Label>
+              <Label htmlFor="edit-struktur_name">Nama </Label>
               <Input 
                 id="edit-struktur_name"
                 name="struktur_name"
-                placeholder="Masukkan nama assessor"
+                placeholder="Masukkan nama "
                 value={formDataState.struktur_name}
                 onChange={handleInputChange}
                 className={formErrors.struktur_name ? "border-red-500" : ""}
@@ -486,20 +486,20 @@ const handleResetEditImage = () => {
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Gambar Galeri</DialogTitle>
+            <DialogTitle>Edit Data</DialogTitle>
             <DialogDescription>
-              Perbarui gambar galeri yang sudah ada.
+              Perbarui data yang sudah ada.
             </DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleSubmitEdit} className="space-y-4">
             
           <div className="space-y-2">
-              <Label htmlFor="edit-struktur_name">Nama Assessor</Label>
+              <Label htmlFor="edit-struktur_name">Nama </Label>
               <Input 
                 id="edit-struktur_name"
                 name="struktur_name"
-                placeholder="Masukkan nama assessor"
+                placeholder="Masukkan nama "
                 value={formDataState.struktur_name}
                 onChange={handleInputChange}
                 className={formErrors.struktur_name ? "border-red-500" : ""}

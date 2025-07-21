@@ -296,12 +296,16 @@ class InstanceController extends Controller
         }
 
         try {
-            if (!empty($request->id)) {
-                $dataUpdate = BerkasApl::findOrFail($request->id);
-                $dataUpdate->update($data);
-            } else {
-                BerkasApl::create($data);
-            }
+
+            BerkasApl::updateOrCreate(
+                [
+                    'assessee_id' => $request->assessee_id,
+                    'schema_id' => $request->schema_id,
+                    'schema_unit_id' => $request->schema_unit_id,
+                    'type' => $request->type ?? 'unit',
+                ],
+                $data
+            );
 
             return response()->json([
                 'success' => true,

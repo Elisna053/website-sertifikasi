@@ -18,6 +18,17 @@ class SchemasTableSeeder extends Seeder
 
         \DB::table('schemas')->delete();
         
+        \DB::table('schemas')->insert(array (
+            0 => 
+            array (
+                'id' => 1,
+                'name' => 'skema 1',
+                'type' => 'tipe skema',
+                'image_url' => 'img/schemas/1752959656.png',
+                'created_at' => '2025-07-19 14:46:47',
+                'updated_at' => '2025-07-19 21:14:16',
+            ),
+        ));
         
         
     }

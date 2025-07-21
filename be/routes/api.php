@@ -13,3 +13,4 @@ require __DIR__ . '/api/certificate.php';
 require __DIR__ . '/api/users.php';
 require __DIR__ . '/api/assessor.php';
 require __DIR__ . '/api/struktur.php';
+require __DIR__ . '/api/metode_sertifikasi.php';

@@ -17,7 +17,7 @@ const UnitDropzone = ({ unit, onDrop, uploadedFile, onClear, error }) => {
   return (
 
     <>
- <label className="block text-sm font-medium text-gray-700 mb-1">
+    <label className="block text-sm font-medium text-gray-700 mb-1">
         {unit.name} <span className="text-red-500">*</span>
       </label>
 
@@ -36,22 +36,22 @@ const UnitDropzone = ({ unit, onDrop, uploadedFile, onClear, error }) => {
         <input {...getInputProps()} />
         {uploadedFile ? (
           <div className="relative text-left">
-    <a
-      href={uploadedFile.path || '#'}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-sm font-medium text-green-700 underline truncate block"
-    >
-      📄 {uploadedFile.name}
-    </a>
-    <button
-      type="button"
-      onClick={onClear}
-      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 shadow hover:bg-red-600"
-    >
-      <FiX className="h-4 w-4" />
-    </button>
-  </div>
+          <a
+            href={uploadedFile.path || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-green-700 underline truncate block"
+          >
+            📄 {uploadedFile.name}
+          </a>
+          <button
+            type="button"
+            onClick={onClear}
+            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 shadow hover:bg-red-600"
+          >
+            <FiX className="h-4 w-4" />
+          </button>
+        </div>
         ) : (
           <div className="space-y-2">
             <FiUpload className="mx-auto h-12 w-12 text-gray-400" />

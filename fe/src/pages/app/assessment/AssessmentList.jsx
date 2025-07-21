@@ -601,20 +601,27 @@ const AssessmentList = () => {
                     )}
                   </p>
                   
-                  {/* <p className="text-sm flex items-center">
-                    <span className="font-medium mr-2">APL 02:</span>
-                    {currentAssessment.apl02_path ? (
-                      <Link 
-                        to={`${API_BASE_URL}/${currentAssessment.apl02_path}`} 
-                        target="_blank"
-                        className="text-blue-600 hover:underline"
-                      >
-                        Lihat Dokumen
-                      </Link>
-                    ) : (
-                      <span className="text-red-500">Belum Diunggah</span>
-                    )}
-                  </p> */}
+                  {currentAssessment.berkas_apl && currentAssessment.berkas_apl.length > 0 ? (
+                    <div className="space-y-2">
+                      {currentAssessment.berkas_apl.map((berkas, index) => (
+                        <p key={index} className="text-sm flex items-center">
+                          <span className="font-medium mr-2">
+                            APL 02: {berkas.units?.name || 'Berkas Tambahan'}
+                          </span>
+                          <Link 
+                            to={`${API_BASE_URL}/${berkas.file_path}`} 
+                            target="_blank"
+                            className="text-blue-600 hover:underline"
+                          >
+                            Lihat Dokumen
+                          </Link>
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-red-500">Belum Diunggah</p>
+                  )}
+
                 </div>
               </div>
             </div>
@@ -630,13 +637,13 @@ const AssessmentList = () => {
             </Button>
             {userRole === 'admin' && currentAssessment && currentAssessment.assessment_status !== 'completed' && (
               <div className="flex gap-2">
-                <Button 
+                {/* <Button 
                   type="button" 
                   onClick={() => navigate(`/app/assessment/edit/${currentAssessment.id}`)}
                   className="bg-blue-600"
                 >
                   <FiEdit className="mr-2 h-4 w-4" /> Edit Asesmen
-                </Button>
+                </Button> */}
                 <Button 
                   type="button" 
                   onClick={() => handleOpenStatusModal(currentAssessment)}

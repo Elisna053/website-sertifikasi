@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { 
   FiUsers, 
   FiFileText, 
@@ -253,6 +253,84 @@ const QuickActions = () => {
   );
 };
 
+const TableDataSertifikasi = ({ value }) => {
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+
+  const yearOptions = useMemo(() => {
+    return Array.from({ length: 4 }, (_, i) => currentYear - i).reverse();
+  }, [currentYear]);
+  
+
+  const filteredData = useMemo(() => {
+    return value.filter((item) => {
+      const year = new Date(item.assessment_date_raw || "").getFullYear();
+      return year === selectedYear;
+    });
+  }, [value, selectedYear]);
+
+  return (
+    <>
+      <div className="mb-4 flex items-center justify-between mt-10">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-800">Data Sertifikasi</h2>
+          <p className="text-sm text-gray-500">
+            Rekap jumlah peserta berdasarkan tanggal pelaksanaan sertifikasi
+          </p>
+        </div>
+        <div className="mb-2 flex items-center gap-2 mr-10">
+          <label htmlFor="year-filter" className="text-sm font-medium text-gray-700">
+            Filter Tahun:
+          </label>
+          <select
+            id="year-filter"
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition duration-150"
+          >
+            {yearOptions.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+        <table className="min-w-full bg-white text-sm text-left">
+          <thead className="bg-gray-100 text-gray-700 uppercase">
+            <tr>
+              <th className="px-4 py-2 border">Tanggal Assessment</th>
+              <th className="px-4 py-2 border">Skema Sertifikasi</th>
+              <th className="px-4 py-2 border">Instansi Pelaksana</th>
+              <th className="px-4 py-2 border">Jumlah Asesi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredData.map((item, index) => (
+              <tr key={index} className="hover:bg-gray-50">
+                <td className="px-4 py-2 border">{item.assessment_date}</td>
+                <td className="px-4 py-2 border">{item.skema_name}</td>
+                <td className="px-4 py-2 border">{item.instance_name}</td>
+                <td className="px-4 py-2 border text-center">{item.total_peserta}</td>
+              </tr>
+            ))}
+            {filteredData.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-4 py-2 border text-center text-gray-500">
+                  Tidak ada data untuk tahun {selectedYear}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+};
+
+
+
 /**
  * Halaman Dashboard Utama
  */
@@ -265,6 +343,8 @@ export const HomeDashboard = () => {
     requested: 0,
     approved: 0,
     completed: 0,
+    certificate: 0,
+    table_sertifikasi: [],
     loading: true,
     error: null
   });
@@ -297,6 +377,8 @@ export const HomeDashboard = () => {
           requested: result.data.total_requested_assessees || 0,
           approved: result.data.total_approved_assessees || 0,
           completed: result.data.total_completed_assessees || 0,
+          certificate: result.data.total_certificate || 0,
+          table_sertifikasi: result.data.table_sertifikasi || 0,
           loading: false,
           error: null
         });
@@ -359,7 +441,7 @@ export const HomeDashboard = () => {
             />
             <StatCard 
               title="Sertifikat Terbit" 
-              value={statistics.completed.toString()} 
+              value={statistics.certificate.toString()} 
               icon={<FiFileText size={24} />} 
               color="purple" 
               change={{ type: 'up', value: 8 }}
@@ -375,24 +457,21 @@ export const HomeDashboard = () => {
           
           {/* Quick Actions */}
           <div className="mb-8">
-            <QuickActions />
+            <TableDataSertifikasi value={statistics.table_sertifikasi} />
           </div>
           
           {/* Progress dan Statistik */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Progress Status */}
+          {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <AssessmentProgress 
               requested={statistics.requested} 
               approved={statistics.approved} 
               completed={statistics.completed} 
             />
-            
-            {/* Statistik Asesi */}
             <AssesseeStats 
               totalBySchema={statistics.totalBySchema} 
               totalByInstance={statistics.totalByInstance} 
             />
-          </div>
+          </div> */}
         </>
       )}
     </div>

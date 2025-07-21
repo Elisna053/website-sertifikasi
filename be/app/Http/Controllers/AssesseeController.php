@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\Fungsi;
 use App\Models\Assessee;
-use App\Http\Requests\StoreAssesseeRequest;
-use App\Http\Requests\UpdateAssesseeRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\StoreAssesseeRequest;
+use App\Http\Requests\UpdateAssesseeRequest;
 
 class AssesseeController extends Controller
 {
@@ -18,7 +20,7 @@ class AssesseeController extends Controller
      */
     public function index()
     {
-        $assessees = Assessee::with('instance', 'schema', 'certificate')
+        $assessees = Assessee::with('instance', 'schema', 'certificate', 'berkasApl.units')
             ->when(Auth::user()->role === 'user', function ($query) {
                 return $query->where('user_id', Auth::user()->id);
             })
@@ -382,24 +384,53 @@ class AssesseeController extends Controller
      */
     public function statisticDetail()
     {
-        $assessees = Assessee::with('instance', 'schema')
+        $assessees = Assessee::with('instance', 'schema', 'certificate')
             ->when(Auth::user()->role === 'user', function ($query) {
                 return $query->where('user_id', Auth::user()->id);
             })
             ->get();
 
+        $totalCertificate = $assessees->sum(function ($assessee) {
+            return $assessee->certificate->count();
+        });
+
         $data['total_assessees'] = $assessees->count();
         $data['total_assessees_by_instance'] = $assessees->groupBy('instance_id')->count();
         $data['total_assessees_by_schema'] = $assessees->groupBy('schema_id')->count();
-        $data['total_requested_assessees'] = $assessees->where('status', 'requested')->count();
-        $data['total_approved_assessees'] = $assessees->where('status', 'approved')->count();
-        $data['total_completed_assessees'] = $assessees->where('status', 'completed')->count();
+        $data['total_requested_assessees'] = $assessees->where('assessment_status', 'requested')->count();
+        $data['total_approved_assessees'] = $assessees->where('assessment_status', 'approved')->count();
+        $data['total_completed_assessees'] = $assessees->where('assessment_status', 'completed')->count();
+        $data['total_certificate'] = $totalCertificate;
+        $data['table_sertifikasi'] = $this->loadDataTable();
+
 
         return response()->json(
             ['success' => true, 'message' => 'Statistic detail retrieved successfully', 'data' => $data],
             200
         );
     }
+
+    public function loadDataTable()
+    {
+        $data = DB::table('assessees as a')
+            ->leftJoin('schemas as b', 'a.schema_id', '=', 'b.id')
+            ->leftJoin('instances as c', 'a.instance_id', '=', 'c.id')
+            ->whereIn('a.assessment_status', ['approved', 'completed'])
+            ->groupBy('a.assessment_date')
+            ->select(
+                'a.assessment_date',
+                DB::raw('MIN(b.name) as skema_name'),
+                DB::raw('MIN(c.name) as instance_name'),
+                DB::raw('COUNT(*) as total_peserta')
+            )
+            ->get();
+        foreach ($data as $item) {
+            $item->assessment_date_raw = $item->assessment_date;
+            $item->assessment_date = Fungsi::format_tgl($item->assessment_date);
+        }
+        return $data;
+    }
+
 
     /**
      * Get the approved assessee.

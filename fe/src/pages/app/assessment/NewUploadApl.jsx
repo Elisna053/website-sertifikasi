@@ -12,9 +12,13 @@ const NewUploadApl = () => {
   const navigate = useNavigate();
 
   const [schema, setSchema] = useState(null);
+  const [berkasAplId, setBerkasAplId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({}); 
   const [uploadedFiles, setUploadedFiles] = useState({});
+  const [additionalFile, setAdditionalFile] = useState(null);
+  const [additionalFileError, setAdditionalFileError] = useState('');
+
 
   const API_URL = import.meta.env.VITE_API_URL || window.ENV_API_URL || "http://localhost:8000/api";
 
@@ -23,12 +27,10 @@ const NewUploadApl = () => {
     const body = document.body;
     const root = document.getElementById("root");
 
-    // Simpan style lama
     const prevHtmlStyle = html.style.cssText;
     const prevBodyStyle = body.style.cssText;
     const prevRootStyle = root?.style.cssText;
 
-    // Terapkan style khusus
     html.style.height = "100%";
     html.style.overflow = "hidden";
     body.style.height = "100%";
@@ -39,7 +41,6 @@ const NewUploadApl = () => {
     }
 
     return () => {
-      // Kembalikan style saat komponen unmount
       html.style.cssText = prevHtmlStyle;
       body.style.cssText = prevBodyStyle;
       if (root) root.style.cssText = prevRootStyle || "";
@@ -48,7 +49,6 @@ const NewUploadApl = () => {
 
 
   useEffect(() => {
-
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -59,27 +59,41 @@ const NewUploadApl = () => {
             'Accept': 'application/json'
           }
         });
-    
+  
         const result = await response.json();
-    
+  
         if (result.success && result.data) {
           const schema = result.data.schema;
           const berkasApl = result.data.berkas_apl;
-    
-          // 🟡 Mapping file yang sudah ada ke dalam uploadedFiles
-          const existingFiles = {};
+          const aplId = result.data.berkas_apl.id;
+  
+          const unitFiles = {};
+          let additional = null;
+  
           if (berkasApl && Array.isArray(berkasApl)) {
             berkasApl.forEach((file) => {
-              existingFiles[file.schema_unit_id] = {
-                name: file.file,
-                path: `${API_URL}/${file.file_path}`,
-                existing: true 
-              };
+              if (file.type === 'additional') {
+                additional = {
+                  id: file.id,
+                  name: file.file,
+                  path: `${API_URL}/${file.file_path}`,
+                  existing: true
+                };
+              } else {
+                unitFiles[file.schema_unit_id] = {
+                  id: file.id,
+                  name: file.file,
+                  path: `${API_URL}/${file.file_path}`,
+                  existing: true
+                };
+              }
             });
           }
-    
+  
+          setBerkasAplId(aplId);
           setSchema(schema);
-          setUploadedFiles(existingFiles);
+          setUploadedFiles(unitFiles);
+          setAdditionalFile(additional);
         } else {
           toast.error(result.message || "Gagal mendapatkan data");
         }
@@ -89,9 +103,10 @@ const NewUploadApl = () => {
         setLoading(false);
       }
     };
-    
+  
     fetchData();
   }, [API_URL, id]);
+  
 
   const handleBack = () => {
     navigate("/app/assessee");
@@ -117,30 +132,40 @@ const NewUploadApl = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
-
+  
     schema.units.forEach((unit) => {
-      if (!uploadedFiles[unit.id]) {
+      const file = uploadedFiles[unit.id];
+      if (!file) {
         newErrors[unit.id] = "Berkas wajib diunggah untuk unit ini";
       }
     });
-
+  
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-
+  
     setLoading(true);
-
+  
     try {
       const token = localStorage.getItem("token");
-
+  
       for (const unit of schema.units) {
+        const file = uploadedFiles[unit.id];
+  
+        if (!file || file.existing) continue;
+  
         const formData = new FormData();
+
+        if (file.id) {
+          formData.append("id", file.id);
+        }
+
         formData.append("assessee_id", id);
         formData.append("schema_id", schema.id);
         formData.append("schema_unit_id", unit.id);
-        formData.append("file", uploadedFiles[unit.id]);
-
+        formData.append("file", file); // File instance
+  
         const response = await fetch(`${API_URL}/apl_upload`, {
           method: "POST",
           headers: {
@@ -149,11 +174,32 @@ const NewUploadApl = () => {
           },
           body: formData,
         });
-
+  
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || "Gagal upload");
       }
-
+  
+      // Upload berkas tambahan hanya jika file baru
+      if (additionalFile && !additionalFile.existing) {
+        const formData = new FormData();
+        formData.append("assessee_id", id);
+        formData.append("schema_id", schema.id);
+        formData.append("type", "additional");
+        formData.append("file", additionalFile);
+  
+        const response = await fetch(`${API_URL}/apl_upload`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+          body: formData,
+        });
+  
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "Gagal upload APL lainnya");
+      }
+  
       toast.success("Semua berkas berhasil diunggah");
       navigate(-1);
     } catch (err) {
@@ -162,6 +208,7 @@ const NewUploadApl = () => {
       setLoading(false);
     }
   };
+  
 
   if (loading && !schema) {
     return (
@@ -181,36 +228,47 @@ const NewUploadApl = () => {
         <h1 className="text-2xl font-bold">Lengkapi Berkas APL</h1>
       </div>
       <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-<h2 className="text-lg font-semibold mb-2">
-  Schema pilihan: {schema?.name}
-</h2>
+      <h2 className="text-lg font-semibold mb-2">
+        Schema pilihan: {schema?.name}
+      </h2>
         </div>
       
 
 
       <div>
-<form
-  onSubmit={handleSubmit}
-  className="space-y-6 bg-white p-4 rounded-lg shadow-sm mb-6"
->
-  {schema?.units?.map((unit) => (
-    <UnitDropzone
-      key={unit.id}
-      unit={unit}
-      uploadedFile={uploadedFiles[unit.id]}
-      onDrop={handleFileDrop(unit.id)}
-      onClear={() => handleClearFile(unit.id)}
-      error={errors?.[unit.id]}
-    />
-  ))}
-  <div className="flex justify-end gap-3 pt-3">
-    <Button type="submit" disabled={loading}>
-      {loading ? "Menyimpan..." : "Simpan"}
-    </Button>
-  </div>
-</form>
-</div>
-</div>
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6 bg-white p-4 rounded-lg shadow-sm mb-6"
+        >
+          {schema?.units?.map((unit) => (
+            <UnitDropzone
+              key={unit.id}
+              unit={unit}
+              uploadedFile={uploadedFiles[unit.id]}
+              onDrop={handleFileDrop(unit.id)}
+              onClear={() => handleClearFile(unit.id)}
+              error={errors?.[unit.id]}
+            />
+          ))}
+
+          <UnitDropzone
+            unit={{ id: 'additional_apl', name: 'Berkas APL Lainnya (Opsional)' }}
+            uploadedFile={additionalFile}
+            onDrop={(files) => setAdditionalFile(files[0])}
+            onClear={() => setAdditionalFile(null)}
+            error={additionalFileError}
+          />
+
+
+          
+          <div className="flex justify-end gap-3 pt-3">
+            <Button type="submit" disabled={loading}>
+              {loading ? "Menyimpan..." : "Simpan"}
+            </Button>
+          </div>
+        </form>
+        </div>
+        </div>
 
   );
 };
